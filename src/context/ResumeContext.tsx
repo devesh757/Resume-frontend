@@ -24,14 +24,23 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const fetchResumes = useCallback(async () => {
     setLoading(true);
-    const { data } = await api.get('/resumes');
-    setResumes(data);
-    setLoading(false);
+    try {
+      const { data } = await api.get('/resumes');
+      setResumes(data);
+    } catch {
+      setResumes([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const fetchResume = useCallback(async (id: string) => {
-    const { data } = await api.get(`/resumes/${id}`);
-    setCurrentResume(data);
+    try {
+      const { data } = await api.get(`/resumes/${id}`);
+      setCurrentResume(data);
+    } catch {
+      setCurrentResume(null);
+    }
   }, []);
 
   const createResume = useCallback(async (data: Partial<Resume>) => {
