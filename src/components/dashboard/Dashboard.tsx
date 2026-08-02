@@ -24,8 +24,13 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    try {
+      await logout();
+    } catch {
+      // clear local state and navigate even if the server call fails
+    } finally {
+      navigate('/login');
+    }
   };
 
   return (

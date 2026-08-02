@@ -41,8 +41,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    await api.post('/auth/logout');
-    setUser(null);
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // ignore server errors; always clear local session
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
