@@ -12,6 +12,10 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const isUser = (v: unknown): v is User =>
+  typeof v === 'object' && v !== null && !Array.isArray(v) &&
+  typeof (v as User).name === 'string' && typeof (v as User).email === 'string';
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,7 +24,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const fetchUser = async () => {
       try {
         const { data } = await api.get('/auth/me');
-        setUser(data);
+        setUser(isUser(data) ? data : null);
       } catch (error) {
         setUser(null);
       } finally {
@@ -32,12 +36,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string) => {
     const { data } = await api.post('/auth/login', { email, password });
-    setUser(data.user);
+    setUser(isUser((data as { user?: unknown })?.user) ? (data as { user: User }).user : null);
   };
 
   const signup = async (name: string, email: string, password: string) => {
     const { data } = await api.post('/auth/register', { name, email, password });
-    setUser(data.user);
+    setUser(isUser((data as { user?: unknown })?.user) ? (data as { user: User }).user : null);
   };
 
   const logout = async () => {
