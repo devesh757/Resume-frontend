@@ -1,26 +1,42 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Resume } from '../../types';
 import { useResume } from '../../hooks/useResume';
 import { useNavigate } from 'react-router-dom';
-import { Edit, Copy, Trash2, Download, FileText } from 'lucide-react';
+import { Edit, Copy, Trash2, Download, FileText, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import { TemplateThumb } from '../common/TemplateThumb';
 import { TEMPLATES } from '../../utils/constants';
+import { ResumePreview } from '../builder/PreviewPanel/ResumePreview';
+import appCss from '../../index.css?inline';
 
 export const ResumeCard: React.FC<{ resume: Resume }> = ({ resume }) => {
   const { deleteResume, duplicateResume } = useResume();
   const navigate = useNavigate();
+  const [downloading, setDownloading] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
   const templateName = TEMPLATES.find((t) => t.id === resume.template)?.name ?? resume.template;
 
   const handleDownload = async () => {
-    const response = await api.get(`/resumes/${resume._id}/pdf`, { responseType: 'blob' });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${resume.title}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const html = previewRef.current?.innerHTML ?? '';
+      const response = await api.post(
+        `/resumes/${resume._id}/pdf`,
+        { html, css: appCss },
+        { responseType: 'blob' }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${resume.title}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -31,6 +47,9 @@ export const ResumeCard: React.FC<{ resume: Resume }> = ({ resume }) => {
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition group">
+      <div className="hidden" ref={previewRef}>
+        <ResumePreview resume={resume} />
+      </div>
       <button
         onClick={() => navigate(`/builder/${resume._id}`)}
         className="block w-full h-44 bg-gray-50 relative group-hover:scale-[1.02] transition"
@@ -68,10 +87,11 @@ export const ResumeCard: React.FC<{ resume: Resume }> = ({ resume }) => {
           </button>
           <button
             onClick={handleDownload}
-            className="flex-1 flex items-center justify-center gap-1 p-1.5 rounded-lg text-xs text-gray-600 hover:bg-gray-100 transition"
+            disabled={downloading}
+            className="flex-1 flex items-center justify-center gap-1 p-1.5 rounded-lg text-xs text-gray-600 hover:bg-gray-100 transition disabled:opacity-60"
             title="Download PDF"
           >
-            <Download size={14} /> PDF
+            {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} PDF
           </button>
           <button
             onClick={handleDelete}
