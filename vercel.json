@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://resume-builder-api.onrender.com/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://resume-backend-1-pbrq.onrender.com/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
